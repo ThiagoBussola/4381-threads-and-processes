@@ -1,6 +1,7 @@
 import { closeDB, connectDB } from "../db/connection";
 import User from "../db/user.model";
 import { faker } from "@faker-js/faker";
+
 function generateUser() {
   return {
     name: faker.internet.username(),
@@ -21,16 +22,33 @@ function generateUser() {
     }),
   };
 }
+
+// async function seedUsers() {
+//   try {
+//     for (let i = 0; i < 200_000; i++) {
+//       const user = generateUser();
+//       await User.create(user);
+//     }
+//   } catch (error) {
+//     console.error("Erro ao cadastrar usuários", error);
+//   }
+// }
+
 async function seedUsers() {
+  const batchSize = 1000;
+
   try {
-    for (let i = 0; i < 200_000; i++) {
-      const user = generateUser();
-      await User.create(user);
+    for (let i = 0; i < 200_000; i += batchSize) {
+      const batch = Array.from({ length: batchSize }, () => generateUser());
+      //await Promise.all(batch.map((user) => User.create(user)));
+      await User.bulkCreate(batch);
+      console.log("Usuários inseridos com sucesso");
     }
   } catch (error) {
     console.error("Erro ao cadastrar usuários", error);
   }
 }
+
 (async () => {
   await connectDB();
   console.time("seed-db");
