@@ -42,3 +42,29 @@ function encryptWithWorker(item: any) {
     worker.postMessage(item);
   });
 }
+
+async function processFile() {
+  const readStream = createReadStream(inputFilePath);
+  const writeStream = createWriteStream(outputFilePath);
+
+  const rl = readline.createInterface({
+    input: readStream,
+    crlfDelay: Infinity,
+  });
+
+  for await (const line of rl) {
+    const item = JSON.parse(line);
+    const encryptedLine = await encryptWithWorker(item);
+    writeStream.write(encryptedLine);
+  }
+
+  writeStream.end();
+}
+
+(async () => {
+  console.time("password-encrypt");
+  await processFile();
+  workers.forEach((worker) => worker.terminate());
+  console.timeEnd("password-encrypt");
+  console.log("Encryption process completed");
+})();
