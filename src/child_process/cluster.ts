@@ -28,5 +28,39 @@ function initializeCluster({ backgroundTaskFile, clusterSize, onMessage }) {
     child.on("message", (message) => {
       onMessage(message);
     });
+
+    //@ts-ignore
+    getNextProcess.array = [...processes.values()];
   }
+
+  const getProcess = roundRobin([...processes.values()]);
+
+  return {
+    getProcess,
+    killAll: () => {
+      processes.forEach((child) => child.kill());
+    },
+  };
+}
+
+//@ts-ignore
+export function initialize({ backgroundTaskFile, clusterSize, onMessage }) {
+  const { getProcess, killAll } = initializeCluster({
+    backgroundTaskFile,
+    clusterSize,
+    onMessage,
+  });
+
+  //@ts-ignore
+  function sendToChild(person) {
+    const child = getProcess();
+    if (child && !child.killed) {
+      child.send(person);
+    }
+  }
+
+  return {
+    sendToChild,
+    killAll,
+  };
 }
