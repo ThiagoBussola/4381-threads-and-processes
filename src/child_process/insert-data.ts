@@ -33,5 +33,30 @@ async function main() {
     );
 
     await new Promise((resolve) => setTimeout(resolve, INIT_TIMEOUT));
-  } catch (error) {}
+
+    console.log("Lendo o arquivo NDJSON");
+    const readStream = createReadStream(inputFilePath);
+    const rl = readline.createInterface({ input: readStream });
+
+    rl.on("line", (line) => {
+      totalLines++;
+      const user = JSON.parse(line);
+      cp.sendToChild({ user });
+    });
+
+    rl.on("close", () => {
+      console.log(`Total de linhas lidas: ${totalLines}`);
+    });
+
+    rl.on("error", (error) => {
+      console.error("Erro ao ler o arquivo NDJSON", error);
+      cp.killAll();
+      process.exit(1);
+    });
+  } catch (error) {
+    console.error("Erro ao executar o script:", error);
+    process.exit(1);
+  }
 }
+
+main();
